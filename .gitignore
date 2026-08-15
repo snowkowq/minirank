@@ -1,0 +1,9 @@
+data/
+*.sqlite
+*.sqlite3
+*.db
+.env
+vendor/
+.idea/
+.vscode/
+notes.md

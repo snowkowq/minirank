@@ -55,6 +55,7 @@ Adhere strictly to the following architectural boundaries. Do not dump files in 
 ## Domain Rules (Business Logic)
 * **Positions & Ranking:** Keyword positions are integers between 1 and 100. **Smaller numbers are better** (position 1 is the top rank). Keep in mind that a mathematical *decrease* in the position number means an *improvement* in the trend.
 * **Data Uniqueness:** There must be strictly **one position entry per keyword per day**. Prevent duplicate entries if a refresh/update action is triggered multiple times on the same day.
+* **Trend calculation:** Compare the most recent position with the position from 7 days earlier (or the oldest available inside that window). A decrease of 3 or more positions is "improved", an increase of 3 or more is "declined", anything else is "stable".
 
 ## Agent Interaction Rules (How We Work)
 * **Modify ONLY requested files:** Restrict your code changes strictly to the files I explicitly mention in the prompt. If you believe other files need to be modified to complete the task, **ASK for permission first**. Do not touch unrequested files.

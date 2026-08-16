@@ -22,7 +22,7 @@ final class KeywordRepository
                 k.id,
                 k.phrase,
                 cur.position AS current_position,
-                past.position AS past_position
+                cur.tracked_on AS current_date
             FROM keywords k
             LEFT JOIN positions cur
                 ON cur.keyword_id = k.id
@@ -31,9 +31,6 @@ final class KeywordRepository
                     FROM positions
                     WHERE keyword_id = k.id
                 )
-            LEFT JOIN positions past
-                ON past.keyword_id = k.id
-                AND past.tracked_on = date(cur.tracked_on, '-7 days')
         SQL;
 
         $params = [];
@@ -51,10 +48,26 @@ final class KeywordRepository
         return array_map(static function (array $row): array {
             $row['id'] = (int) $row['id'];
             $row['current_position'] = $row['current_position'] !== null ? (int) $row['current_position'] : null;
-            $row['past_position'] = $row['past_position'] !== null ? (int) $row['past_position'] : null;
 
             return $row;
         }, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    public function positionBefore(int $keywordId, string $referenceDate): ?int
+    {
+        $stmt = $this->db->prepare(
+            'SELECT position
+             FROM positions
+             WHERE keyword_id = :keyword_id
+               AND tracked_on <= date(:reference_date, \'-7 days\')
+             ORDER BY tracked_on DESC
+             LIMIT 1'
+        );
+        $stmt->execute([':keyword_id' => $keywordId, ':reference_date' => $referenceDate]);
+
+        $position = $stmt->fetchColumn();
+
+        return $position === false ? null : (int) $position;
     }
 
     public function find(int $id): ?array

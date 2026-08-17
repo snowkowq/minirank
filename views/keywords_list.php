@@ -8,6 +8,17 @@
 <body>
     <h1>Keyword positions</h1>
 
+    <?php if ($error !== null): ?>
+        <p class="error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p>
+    <?php endif; ?>
+
+    <form method="post" action="?page=keywords">
+        <input type="hidden" name="action" value="create">
+        <label for="phrase">Add keyword</label>
+        <input type="text" id="phrase" name="phrase">
+        <button type="submit">Add</button>
+    </form>
+
     <form method="get" action="?page=keywords">
         <label for="search">Search</label>
         <input type="search" id="search" name="q" value="<?= htmlspecialchars($search ?? '', ENT_QUOTES, 'UTF-8') ?>">
@@ -22,6 +33,8 @@
                 <th>Phrase</th>
                 <th>Current position</th>
                 <th>7-day trend</th>
+                <th>Edit</th>
+                <th>Delete</th>
             </tr>
         </thead>
         <tbody>
@@ -41,6 +54,21 @@
                     <?= $keyword['trend_label'] !== null
                         ? htmlspecialchars($keyword['trend_label'], ENT_QUOTES, 'UTF-8')
                         : 'No data yet' ?>
+                </td>
+                <td>
+                    <form method="post" action="?page=keywords">
+                        <input type="hidden" name="action" value="update">
+                        <input type="hidden" name="id" value="<?= htmlspecialchars((string) $keyword['id'], ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="text" name="phrase" value="<?= htmlspecialchars($keyword['phrase'], ENT_QUOTES, 'UTF-8') ?>">
+                        <button type="submit">Save</button>
+                    </form>
+                </td>
+                <td>
+                    <form method="post" action="?page=keywords">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="id" value="<?= htmlspecialchars((string) $keyword['id'], ENT_QUOTES, 'UTF-8') ?>">
+                        <button type="submit">Delete</button>
+                    </form>
                 </td>
             </tr>
         <?php endforeach; ?>

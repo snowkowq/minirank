@@ -88,6 +88,30 @@ final class KeywordRepository
         return $row;
     }
 
+    public function create(string $phrase): int
+    {
+        $stmt = $this->db->prepare('INSERT INTO keywords (phrase) VALUES (:phrase)');
+        $stmt->execute([':phrase' => $phrase]);
+
+        return (int) $this->db->lastInsertId();
+    }
+
+    public function update(int $id, string $phrase): bool
+    {
+        $stmt = $this->db->prepare('UPDATE keywords SET phrase = :phrase WHERE id = :id');
+        $stmt->execute([':id' => $id, ':phrase' => $phrase]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function delete(int $id): bool
+    {
+        $stmt = $this->db->prepare('DELETE FROM keywords WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+
+        return $stmt->rowCount() > 0;
+    }
+
     public function historyFor(int $id): array
     {
         $stmt = $this->db->prepare(

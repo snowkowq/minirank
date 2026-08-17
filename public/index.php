@@ -30,6 +30,49 @@ function trendLabel(?string $trend): ?string
     };
 }
 
+$error = null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? null;
+    $repository = new KeywordRepository(Database::connection());
+
+    $phrase = isset($_POST['phrase']) && is_string($_POST['phrase']) ? trim($_POST['phrase']) : '';
+    $id = isset($_POST['id']) ? filter_var($_POST['id'], FILTER_VALIDATE_INT) : false;
+    $phraseLength = function_exists('mb_strlen') ? mb_strlen($phrase) : strlen($phrase);
+
+    $needsPhrase = $action === 'create' || $action === 'update';
+    $needsId = $action === 'update' || $action === 'delete';
+
+    if (!in_array($action, ['create', 'update', 'delete'], true)) {
+        $error = 'Unknown action.';
+    } elseif ($needsPhrase && ($phrase === '' || $phraseLength > 200)) {
+        $error = 'The keyword must be between 1 and 200 characters.';
+    } elseif ($needsId && ($id === false || $id < 1)) {
+        $error = 'Invalid keyword selected.';
+    } else {
+        try {
+            switch ($action) {
+                case 'create':
+                    $repository->create($phrase);
+                    break;
+
+                case 'update':
+                    $repository->update($id, $phrase);
+                    break;
+
+                case 'delete':
+                    $repository->delete($id);
+                    break;
+            }
+
+            header('Location: ?page=keywords');
+            exit;
+        } catch (PDOException $e) {
+            $error = 'This keyword already exists.';
+        }
+    }
+}
+
 $page = $_GET['page'] ?? 'keywords';
 
 switch ($page) {

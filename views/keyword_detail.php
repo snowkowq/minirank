@@ -3,9 +3,11 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $keyword !== null
         ? htmlspecialchars($keyword['phrase'], ENT_QUOTES, 'UTF-8') . ' · Keyword positions'
         : 'Not found · Keyword positions' ?></title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <p><a href="?page=keywords">&larr; Back to list</a></p>

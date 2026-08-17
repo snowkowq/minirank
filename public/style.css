@@ -1,0 +1,229 @@
+:root {
+    --border: #d9dee3;
+    --text: #1f2328;
+    --muted: #5c6670;
+    --link: #1d4ed8;
+    --improved-bg: #dcfce7;
+    --improved-fg: #166534;
+    --declined-bg: #fee2e2;
+    --declined-fg: #991b1b;
+    --stable-bg: #eef2f6;
+    --stable-fg: #374151;
+    --error-bg: #fee2e2;
+    --error-fg: #991b1b;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0 auto;
+    max-width: 60rem;
+    padding: 1rem;
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.45;
+}
+
+h1 {
+    font-size: 1.3rem;
+}
+
+h2 {
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+}
+
+a {
+    color: var(--link);
+}
+
+.error {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--error-fg);
+    border-radius: 0.25rem;
+    background: var(--error-bg);
+    color: var(--error-fg);
+}
+
+form {
+    margin: 0 0 1rem;
+}
+
+label {
+    font-size: 0.875rem;
+}
+
+input[type="text"],
+input[type="search"] {
+    min-width: 0;
+    max-width: 100%;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    font: inherit;
+}
+
+button {
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    background: #f6f8fa;
+    font: inherit;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+th,
+td {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+
+th {
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+td form {
+    margin: 0;
+}
+
+td input[type="text"],
+td input[type="search"] {
+    width: 100%;
+}
+
+td button {
+    white-space: nowrap;
+}
+
+dl dt {
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+dl dd {
+    margin: 0.25rem 0 0;
+}
+
+.trend--improved {
+    background: var(--improved-bg);
+    color: var(--improved-fg);
+}
+
+.trend--declined {
+    background: var(--declined-bg);
+    color: var(--declined-fg);
+}
+
+.trend--stable {
+    background: var(--stable-bg);
+    color: var(--stable-fg);
+}
+
+dl dd.trend--improved,
+dl dd.trend--declined,
+dl dd.trend--stable {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 0.75rem;
+    }
+
+    form label {
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    form input[type="text"],
+    form input[type="search"] {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    table:has(tbody tr[id^="keyword-"]) thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    table:has(tbody tr[id^="keyword-"]) tbody,
+    table:has(tbody tr[id^="keyword-"]) tr[id^="keyword-"] {
+        display: block;
+    }
+
+    table:has(tbody tr[id^="keyword-"]) tr[id^="keyword-"] {
+        margin-bottom: 0.75rem;
+        padding: 0.5rem 0.5rem 0.25rem;
+        border: 1px solid var(--border);
+        border-radius: 0.25rem;
+    }
+
+    table:has(tbody tr[id^="keyword-"]) td {
+        display: block;
+        width: 100%;
+        padding: 0.25rem 0;
+        border-bottom: none;
+    }
+
+    table:has(tbody tr[id^="keyword-"]) td::before {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+    }
+
+    table:has(tbody tr[id^="keyword-"]) td:nth-child(1)::before {
+        content: "Phrase";
+    }
+
+    table:has(tbody tr[id^="keyword-"]) td:nth-child(2)::before {
+        content: "Current position";
+    }
+
+    table:has(tbody tr[id^="keyword-"]) td:nth-child(3)::before {
+        content: "7-day trend";
+    }
+
+    table:has(tbody tr[id^="keyword-"]) td:nth-child(4)::before {
+        content: "Edit";
+    }
+
+    table:has(tbody tr[id^="keyword-"]) td:nth-child(5)::before {
+        content: "Delete";
+    }
+
+    table:has(tbody tr[id^="keyword-"]) td button {
+        width: 100%;
+        margin-bottom: 0.25rem;
+    }
+}

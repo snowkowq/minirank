@@ -32,6 +32,93 @@ function trendLabel(?string $trend): ?string
 
 $error = null;
 
+if (($_GET['page'] ?? '') === 'refresh') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Method not allowed.']);
+        exit;
+    }
+
+    $db = Database::connection();
+    $today = date('Y-m-d');
+
+    $keywordsStmt = $db->prepare(
+        'SELECT k.id,
+                (SELECT position
+                 FROM positions
+                 WHERE keyword_id = k.id
+                 ORDER BY tracked_on DESC
+                 LIMIT 1) AS last_position
+         FROM keywords k
+         ORDER BY k.id'
+    );
+    $keywordsStmt->execute();
+
+    $upsertStmt = $db->prepare(
+        'INSERT INTO positions (keyword_id, position, tracked_on)
+         VALUES (:keyword_id, :position, :tracked_on)
+         ON CONFLICT (keyword_id, tracked_on)
+         DO UPDATE SET position = excluded.position'
+    );
+    $positionBeforeStmt = $db->prepare(
+        'SELECT position
+         FROM positions
+         WHERE keyword_id = :keyword_id
+           AND tracked_on <= date(:today, \'-7 days\')
+         ORDER BY tracked_on DESC
+         LIMIT 1'
+    );
+
+    $refreshed = [];
+
+    $db->beginTransaction();
+
+    try {
+        foreach ($keywordsStmt->fetchAll(PDO::FETCH_ASSOC) as $keywordRow) {
+            $keywordId = (int) $keywordRow['id'];
+            $lastPosition = $keywordRow['last_position'] !== null ? (int) $keywordRow['last_position'] : null;
+
+            if ($lastPosition !== null) {
+                $newPosition = min(100, max(1, $lastPosition + random_int(-2, 2)));
+            } else {
+                $newPosition = random_int(1, 100);
+            }
+
+            $upsertStmt->execute([
+                ':keyword_id' => $keywordId,
+                ':position'   => $newPosition,
+                ':tracked_on' => $today,
+            ]);
+
+            $positionBeforeStmt->execute([':keyword_id' => $keywordId, ':today' => $today]);
+            $positionBefore = $positionBeforeStmt->fetchColumn();
+            $positionBefore = $positionBefore === false ? null : (int) $positionBefore;
+
+            $refreshed[] = [
+                'id'              => $keywordId,
+                'position'        => $newPosition,
+                'position_before' => $positionBefore,
+            ];
+        }
+
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+
+        http_response_code(500);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Refresh failed.']);
+        exit;
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode(['keywords' => $refreshed]);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? null;
     $repository = new KeywordRepository(Database::connection());

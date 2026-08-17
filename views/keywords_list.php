@@ -25,7 +25,7 @@
         <button type="submit">Search</button>
     </form>
 
-    <button type="button">Refresh positions</button>
+    <button type="button" id="refresh-positions">Refresh positions</button>
 
     <table>
         <thead>
@@ -39,18 +39,18 @@
         </thead>
         <tbody>
         <?php foreach ($keywords as $keyword): ?>
-            <tr>
+            <tr id="keyword-<?= htmlspecialchars((string) $keyword['id'], ENT_QUOTES, 'UTF-8') ?>">
                 <td>
                     <a href="?page=keyword&amp;id=<?= htmlspecialchars((string) $keyword['id'], ENT_QUOTES, 'UTF-8') ?>">
                         <?= htmlspecialchars($keyword['phrase'], ENT_QUOTES, 'UTF-8') ?>
                     </a>
                 </td>
-                <td>
+                <td class="js-position">
                     <?= $keyword['current_position'] !== null
                         ? htmlspecialchars((string) $keyword['current_position'], ENT_QUOTES, 'UTF-8')
                         : '—' ?>
                 </td>
-                <td class="<?= $keyword['trend'] !== null ? 'trend--' . htmlspecialchars($keyword['trend'], ENT_QUOTES, 'UTF-8') : '' ?>">
+                <td class="js-trend <?= $keyword['trend'] !== null ? 'trend--' . htmlspecialchars($keyword['trend'], ENT_QUOTES, 'UTF-8') : '' ?>">
                     <?= $keyword['trend_label'] !== null
                         ? htmlspecialchars($keyword['trend_label'], ENT_QUOTES, 'UTF-8')
                         : 'No data yet' ?>
@@ -74,5 +74,79 @@
         <?php endforeach; ?>
         </tbody>
     </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var button = document.getElementById('refresh-positions');
+
+            if (button === null) {
+                return;
+            }
+
+            button.addEventListener('click', function () {
+                button.disabled = true;
+
+                fetch('?page=refresh', { method: 'POST' })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error('Request failed');
+                        }
+
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        (data.keywords || []).forEach(function (keyword) {
+                            var row = document.getElementById('keyword-' + keyword.id);
+
+                            if (row === null) {
+                                return;
+                            }
+
+                            var positionCell = row.querySelector('.js-position');
+
+                            if (positionCell !== null) {
+                                positionCell.textContent = keyword.position;
+                            }
+
+                            var trendCell = row.querySelector('.js-trend');
+
+                            if (trendCell === null) {
+                                return;
+                            }
+
+                            if (keyword.position_before === null) {
+                                trendCell.textContent = 'No data yet';
+                                trendCell.className = 'js-trend';
+                                return;
+                            }
+
+                            var diff = keyword.position_before - keyword.position;
+                            var trendKey;
+                            var trendLabel;
+
+                            if (diff >= 3) {
+                                trendKey = 'improved';
+                                trendLabel = 'Improved';
+                            } else if (diff <= -3) {
+                                trendKey = 'declined';
+                                trendLabel = 'Declined';
+                            } else {
+                                trendKey = 'stable';
+                                trendLabel = 'Stable';
+                            }
+
+                            trendCell.textContent = trendLabel;
+                            trendCell.className = 'js-trend trend--' + trendKey;
+                        });
+                    })
+                    .catch(function () {
+                        alert('Failed to refresh positions.');
+                    })
+                    .finally(function () {
+                        button.disabled = false;
+                    });
+            });
+        });
+    </script>
 </body>
 </html>

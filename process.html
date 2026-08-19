@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Process Report — MiniRank</title>
+<style>
+  :root {
+    --text: #1f2933;
+    --muted: #5b6770;
+    --bg: #fafafa;
+    --panel: #ffffff;
+    --border: #e2e5e8;
+    --accent: #2f6fed;
+    --quote-bg: #f1f4f8;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    font-size: 16px;
+  }
+
+  main {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  header p { color: var(--muted); margin-top: 0.5rem; }
+
+  h1 { font-size: 1.9rem; margin: 0 0 0.5rem; }
+
+  h2 {
+    font-size: 1.35rem;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  h3 { font-size: 1.05rem; margin: 1.6rem 0 0.6rem; }
+
+  p { margin: 0 0 1rem; }
+
+  ul { margin: 0 0 1rem; padding-left: 1.4rem; }
+
+  li { margin-bottom: 0.4rem; }
+
+  .disclosure {
+    background: #eef4ff;
+    border: 1px solid #c9dcff;
+    border-radius: 6px;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.95rem;
+  }
+
+  .disclosure p { margin: 0; }
+
+  blockquote {
+    margin: 0.75rem 0 1.25rem;
+    padding: 0.9rem 1.1rem;
+    background: var(--quote-bg);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    white-space: pre-wrap;
+    font-size: 0.92rem;
+    overflow-x: auto;
+  }
+
+  code {
+    font-family: Consolas, "SF Mono", Menlo, monospace;
+    font-size: 0.88em;
+    background: #eef0f2;
+    border-radius: 3px;
+    padding: 0.1em 0.3em;
+  }
+
+  blockquote code {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 0.1em 0.3em;
+  }
+
+  .prompt-label {
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.25rem;
+  }
+
+  .note {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  ol li { margin-bottom: 0.5rem; }
+
+  a { color: var(--accent); }
+
+  ul.links { list-style: none; padding-left: 0; }
+  ul.links li { margin-bottom: 0.35rem; }
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <h1>MiniRank — Project Process Report</h1>
+    <p>Documentation of the build process, prompts, and retrospective for the MiniRank keyword-tracking project.</p>
+  </header>
+
+  <section class="disclosure">
+    <p>"This project was developed using an AI coding assistant (opencode) for code generation and a separate AI chat for brainstorming and structuring, in accordance with the brief's requirements."</p>
+  </section>
+
+  <section>
+    <h2>Section 1 — Plan</h2>
+
+    <h3>a) Stack choice</h3>
+    <p>Plain PHP, no framework. Free models have small context windows; a large scaffold would waste it. SQLite gives zero setup for the evaluator and satisfies the "runs in 5 minutes" requirement. Every line in the repository is code I can explain.</p>
+
+    <h3>b) Build order</h3>
+    <p>Schema, then seed, then repository, then read pages, then CRUD, then AJAX, then CSS. Foundation first, because a schema mistake propagates everywhere.</p>
+
+    <h3>c) Design decisions made by me, not the agent</h3>
+    <ul>
+      <li>The <code>UNIQUE(keyword_id, tracked_on)</code> constraint, requested on day one, which turned out to solve the Refresh idempotency three days later.</li>
+      <li>The 3-position threshold for the trend.</li>
+      <li>The <code>TrendCalculator</code>, written by hand.</li>
+      <li>Starting position 30–70 in the seed instead of 1–100, for more plausible demo data.</li>
+    </ul>
+
+    <h3>d) AGENTS.md used as a working instrument, not a formality</h3>
+    <p>It contained prescriptive rules: wrong/right SQL examples, escaping required inside HTML attributes, and "modify only the requested files". I then used it as the review standard that caught the agent's own deviations from it.</p>
+
+    <h3>e) Architecture retrospective</h3>
+    <p>The trend rule was ambiguously phrased in my AGENTS.md ("or the oldest available in the window"), which produced two divergent implementations in the code.</p>
+  </section>
+
+  <section>
+    <h2>Section 2 — Prompts &amp; Fixes</h2>
+
+    <h3>1. The prompt that failed (full CRUD in one go)</h3>
+    <p class="prompt-label">Prompt</p>
+    <blockquote>Read AGENTS.md. Existing: public/index.php (autoloader, `page` routing, trendLabel() helper), src/KeywordRepository.php, views/keywords_list.php, views/keyword_detail.php.
+
+Add keyword CRUD (single user, no login):
+
+1. src/KeywordRepository.php — add:
+   - create(string $phrase): int
+   - update(int $id, string $phrase): bool
+   - delete(int $id): bool
+
+2. public/index.php — handle POST actions: create, update, delete.
+   Validate: phrase is required, trimmed, max 200 chars.
+   The phrase is UNIQUE COLLATE NOCASE — catch the constraint violation and show a readable error instead of a PDO exception.
+   After a successful POST, redirect back to the list (POST/Redirect/GET) so a refresh does not resubmit.
+
+3. views/keywords_list.php — add an "Add keyword" form, plus edit and delete controls per row.
+   Delete must be a POST, never a GET link.
+
+Escape everything per AGENTS.md.
+
+Only modify those three files.</blockquote>
+    <ul>
+      <li><strong>Result:</strong> 8 file reads, 4 searches, then the agent stopped without writing a single file — the context-overflow symptom described in the setup guide's troubleshooting table.</li>
+      <li><strong>Fix:</strong> split into three separate prompts (repository methods, POST routes, forms). The first one delivered instantly after a single file read.</li>
+      <li><strong>Conclusion:</strong> small steps are a technical constraint of small context windows, not a stylistic preference.</li>
+    </ul>
+
+    <h3>2. The best catch (trend divergence between two pages)</h3>
+    <p class="prompt-label">Prompt</p>
+    <blockquote>The detail page duplicates the trend logic that already exists elsewhere, and with different semantics: the list uses the position from exactly 7 days before, the detail page uses the oldest entry inside the 7-day window. Two definitions of the same rule.
+
+Fix it:
+1. Add a method to src/KeywordRepository.php: positionBefore(int $keywordId, string $referenceDate): ?int — returns the position from the most recent day that is at least 7 days before the reference date, or null.
+2. Use it in both branches of public/index.php, so list and detail always agree.
+3. Remove the inline window/loop calculation from the keyword branch.
+
+Also: the trend_label match block is now duplicated in both branches — extract it into a small helper function in public/index.php.
+
+Only modify src/KeywordRepository.php and public/index.php.</blockquote>
+    <ul>
+      <li><strong>Context:</strong> the detail page was functionally correct and passed every test. Reading the diff, I saw it computed the trend inline with different semantics than the list: the list required an exact <code>date(tracked_on, '-7 days')</code> match, the detail page took the oldest entry in the window. With fully seeded data both produce the same answer, so the bug was invisible — it would have surfaced after CRUD or after a Refresh that skipped a day, showing "Improved" on the list and "Stable" on the detail page for the same keyword.</li>
+      <li><strong>Secondary defect in the same block:</strong> the loop over <code>$history</code> neither compared nor exited early, it only overwrote until the last matching row. It worked solely because <code>historyFor()</code> sorts descending; a change in sort order would have made it silently wrong.</li>
+      <li><strong>Root cause:</strong> the ambiguity in my own AGENTS.md allowed both readings.</li>
+      <li><strong>Result:</strong> diff of +38 −29 across two files — duplication removed, not stacked on top of.</li>
+    </ul>
+
+    <h3>3. Deviation from my own AGENTS.md (HTML echoed in index.php)</h3>
+    <p class="prompt-label">Prompt</p>
+    <blockquote>Read AGENTS.md. public/index.php now handles POST actions create, update and delete (fields: action, id, phrase), and sets $error when validation fails.
+
+First: move the error rendering out of public/index.php — it currently echoes HTML there, which contradicts the "no HTML in index.php" rule. Pass $error to the view instead.
+
+Then update views/keywords_list.php:
+- show $error above the table when it is set
+- an "Add keyword" form at the top: POST, hidden action=create, a text input named phrase, a submit button
+- per row: an edit control (inline form with action=update, id, and the current phrase prefilled) and a delete button (POST form with action=delete and id)
+
+Delete must be POST, never a GET link. Escape every printed value, including inside attributes.
+
+Only modify public/index.php and views/keywords_list.php.</blockquote>
+    <ul>
+      <li><strong>Context:</strong> while adding the POST routes, the agent rendered the validation error with <code>echo</code> directly in index.php.</li>
+      <li><strong>Problem:</strong> this violated the "no HTML in index.php" rule from my own AGENTS.md. Nothing was broken — it was caught by reading the generated code, not by running it.</li>
+      <li><strong>Fix:</strong> <code>$error</code> passed to the view and rendered there.</li>
+    </ul>
+
+    <h3>Testing methodology</h3>
+    <ul>
+      <li><strong>XSS</strong> tested on two separate input routes: the query string (search box) and the POST form (keyword name). In both cases the payload came back escaped, and DevTools showed no <code>&lt;script&gt;</code> element in the DOM — including inside the <code>value</code> attribute of the edit input, which is the easiest place to miss.</li>
+      <li><strong>Idempotency</strong> verified against the database, not the UI: after roughly ten consecutive AJAX Refresh clicks, <code>SELECT COUNT(*) WHERE tracked_on = date('now')</code> returned 9 rows for 9 keywords.</li>
+      <li><strong>M7</strong> verified by cloning the public repository into a clean directory and following the README as a first-time reader. This is how I discovered README.md was missing from the repository entirely — it had never been committed.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Section 3 — Retrospective</h2>
+
+    <h3>a) Time invested</h3>
+    <p>Roughly 10 hours across five days — pre-flight and environment setup on Friday, repository scaffold and AGENTS.md on Saturday, the main build day on Sunday (schema, seed, repository, list and detail pages), CRUD, AJAX refresh and responsive CSS on Monday, README and final verification on Tuesday.</p>
+
+    <h3>b) What I would do differently</h3>
+    <ul>
+      <li>Issue small prompts from the start instead of learning it from a failure.</li>
+      <li>Run the clean-clone test much earlier.</li>
+      <li>Phrase the trend rule unambiguously on day one.</li>
+      <li>Write session notes on the spot rather than reconstructing them.</li>
+    </ul>
+
+    <h3>c) Known limitations</h3>
+    <ul>
+      <li><code>PRAGMA foreign_keys</code> is per-connection in SQLite rather than persisted in the file, so <code>ON DELETE CASCADE</code> depends on every connection setting it — it is set in <code>src/Database.php</code>, but any future entry point would need the same.</li>
+      <li>No automated tests (S6 not attempted).</li>
+      <li>Stretch goals not attempted, due to time.</li>
+    </ul>
+
+    <h3>d) On working with an agent</h3>
+    <p>It demands the same rigour in specification as working with a junior developer. The output quality tracked directly with how precisely I bounded each request — and the one ambiguity I left in my own conventions is exactly where the code diverged.</p>
+  </section>
+
+  <section>
+    <h2>Opencode sessions (reference links)</h2>
+    <ul class="links">
+      <li>Pre-flight (hello.php): <a href="https://opncd.ai/share/5cxGGiLS">https://opncd.ai/share/5cxGGiLS</a></li>
+      <li>/init and DB schema — the agent inferred Go from vendor/ in .gitignore: <a href="https://opncd.ai/share/JL0e4155">https://opncd.ai/share/JL0e4155</a></li>
+      <li>CRUD, first attempt — the prompt that overflowed and wrote nothing: <a href="https://opncd.ai/share/0e8VDUq3">https://opncd.ai/share/0e8VDUq3</a></li>
+      <li>Seed script: <a href="https://opncd.ai/share/jnUtHemc">https://opncd.ai/share/jnUtHemc</a></li>
+      <li>src/Database.php: <a href="https://opncd.ai/share/G1Xkjhb4">https://opncd.ai/share/G1Xkjhb4</a></li>
+      <li>src/KeywordRepository.php: <a href="https://opncd.ai/share/fRTG94JK">https://opncd.ai/share/fRTG94JK</a></li>
+      <li>index.php + keywords_list.php: <a href="https://opncd.ai/share/9NpIAuuP">https://opncd.ai/share/9NpIAuuP</a></li>
+      <li>Detail page + trend refactor: <a href="https://opncd.ai/share/zx9R56nY">https://opncd.ai/share/zx9R56nY</a></li>
+      <li>POST routes: <a href="https://opncd.ai/share/ztf8Rs4w">https://opncd.ai/share/ztf8Rs4w</a></li>
+      <li>CRUD forms: <a href="https://opncd.ai/share/8csxWLuP">https://opncd.ai/share/8csxWLuP</a></li>
+      <li>AJAX refresh: <a href="https://opncd.ai/share/NtG5vs60">https://opncd.ai/share/NtG5vs60</a></li>
+      <li>Responsive CSS: <a href="https://opncd.ai/share/huxIvD6t">https://opncd.ai/share/huxIvD6t</a></li>
+    </ul>
+  </section>
+
+</main>
+</body>
+</html>
